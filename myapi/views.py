@@ -14,8 +14,18 @@ class HeroViewSet(viewsets.ModelViewSet):
 
 class PDFProcessViewSet(APIView):
     def post(self, request, *args, **kwargs):
-        print(request.FILES, flush=True)
+        pdfFileObj = request.FILES['file'].read() 
+        pdfReader = PyPDF2.PdfFileReader(io.BytesIO(pdfFileObj))
+        numPages = pdfReader.numPages
+        page = pdfReader.pages[0]
+        text = page.extract_text()
+        print(text, flush=True)
 
+        return Response(text)
+
+
+class TXTProcessViewSet(APIView):
+    def post(self, request, *args, **kwargs):
         pdfFileObj = request.FILES['file'].read() 
         pdfReader = PyPDF2.PdfFileReader(io.BytesIO(pdfFileObj))
         numPages = pdfReader.numPages
