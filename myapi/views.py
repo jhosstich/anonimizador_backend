@@ -13,7 +13,9 @@ from rest_framework.views import APIView
 # from scrubadub.detectors import NameDetector
 from scrubadub import clean
 import scrubadub
-import scrubadub_spacy
+from scrubadub.detectors.catalogue import register_detector
+from scrubadub.detectors.base import Detector
+from scrubadub.filth import PhoneFilth
 # ----
 
 
@@ -44,20 +46,41 @@ class TXTProcessViewSetScrubadub(APIView):
         supplied_filth_detector = scrubadub.detectors.UserSuppliedFilthDetector([
             {'match': 'Jhoselin', 'filth_type': 'name', 'ignore_case': True},
             {'match': 'Oscco', 'filth_type': 'name', 'ignore_case': True},
+            {'match': '626175308', 'filth_type': 'phone', 'ignore_case': True},   
         ])
 
         # Crear un objeto Scrubber que limpiará el texto
         scrubber = scrubadub.Scrubber(locale='es')
 
-        print(file_content, flush=True)
-
         # Agregar el detector personalizado al Scrubber
         scrubber.add_detector(supplied_filth_detector)
 
         # Definir el texto que se desea anonimizar
-        texto = "Jhoselin Oscco, Ana López y Juan Pérez fueron a una reunión. Jhoselin dijo que llegaría tarde. Jhoselin dijo que vivia en la Gran Vía, Madrid, Madrid, que su numero de telefono es 626175308 y que la podiamos contactar en cualquier momento."
+        texto = "Jhoselin Oscco, Ana López y Juan Pérez fueron a una reunión. Jhoselin dijo que llegaría tarde. Jhoselin dijo que vivia en la Gran Vía, Madrid, Madrid, que su numero de telefono es 626175308. El numero de telefono de Ana Lopez es  626175309  y la podemos contactar en cualquier momento."
         # Llamar al método clean() del Scrubber para anonimizar el texto
-        anon_text= scrubber.clean(file_content)
+        anon_text= scrubber.clean(texto)
 
         # Retornar el texto anonimizado en la respuesta HTTP
         return Response(anon_text)
+    
+
+#methos to updathe Phone detector of Scrubadub
+@register_detector
+class PhoneDetector(Detector):
+ 
+    filth_cls = PhoneFilth
+    name = 'phone'
+    autoload = True
+
+    def iter_filth(self, text, document_name=None):
+        for match in phonenumbers.PhoneNumberMatcher(text, self.region):
+            phone_number = phonenumbers.format_number(match.number, phonenumbers.PhoneNumberFormat.E164)
+            if phone_number == '626175308':  # modify the phone number here
+                yield PhoneFilth(
+                    beg=match.start,
+                    end=match.end,
+                    text=phone_number,
+                    detector_name=self.name,
+                    document_name=document_name,
+                    locale=self.locale,
+                )
