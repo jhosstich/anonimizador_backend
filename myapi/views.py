@@ -39,8 +39,8 @@ class PDFProcessViewSet(APIView):
 class TXTProcessViewSetScrubadub(APIView):
     def post(self, request, *args, **kwargs):
 
-        file_uploaded = request.FILES['file']
-        file_content = file_uploaded.read().decode('utf-8')
+        #file_uploaded = request.FILES['file']
+        #file_content = file_uploaded.read().decode('utf-8')
 
         # Definir un detector personalizado para nombres propios
         supplied_filth_detector = scrubadub.detectors.UserSuppliedFilthDetector([
@@ -75,7 +75,7 @@ class PhoneDetector(Detector):
     def iter_filth(self, text, document_name=None):
         for match in phonenumbers.PhoneNumberMatcher(text, self.region):
             phone_number = phonenumbers.format_number(match.number, phonenumbers.PhoneNumberFormat.E164)
-            if phone_number == '626175308':  # modify the phone number here
+            if phone_number == '626175309':  # modify the phone number here
                 yield PhoneFilth(
                     beg=match.start,
                     end=match.end,
