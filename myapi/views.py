@@ -16,8 +16,6 @@ import scrubadub
 from scrubadub.detectors.catalogue import register_detector
 from scrubadub.detectors.base import Detector
 from scrubadub.filth import PhoneFilth
-# ----
-
 
 class HeroViewSet(viewsets.ModelViewSet):
     queryset = Hero.objects.all().order_by('name')
@@ -38,15 +36,17 @@ class PDFProcessViewSet(APIView):
 
 class TXTProcessViewSetScrubadub(APIView):
     def post(self, request, *args, **kwargs):
+        # Get the text from the request
+        file_uploaded = request.FILES['file']
+        texto = file_uploaded.read().decode('utf-8')
+        #texto = request.data.get('text')
 
-        #file_uploaded = request.FILES['file']
-        #file_content = file_uploaded.read().decode('utf-8')
-
-        # Definir un detector personalizado para nombres propios
+        # Definir un detector personalizado para nombres propios, apellido, teléfono y dirección
         supplied_filth_detector = scrubadub.detectors.UserSuppliedFilthDetector([
             {'match': 'Jhoselin', 'filth_type': 'name', 'ignore_case': True},
             {'match': 'Oscco', 'filth_type': 'name', 'ignore_case': True},
-            {'match': '626175308', 'filth_type': 'phone', 'ignore_case': True},   
+            {'match': '626175308', 'filth_type': 'phone', 'ignore_case': True},
+            {'match': 'Gran Vía', 'filth_type': 'address', 'ignore_case': True},
         ])
 
         # Crear un objeto Scrubber que limpiará el texto
@@ -55,19 +55,15 @@ class TXTProcessViewSetScrubadub(APIView):
         # Agregar el detector personalizado al Scrubber
         scrubber.add_detector(supplied_filth_detector)
 
-        # Definir el texto que se desea anonimizar
-        texto = "Jhoselin Oscco, Ana López y Juan Pérez fueron a una reunión. Jhoselin dijo que llegaría tarde. Jhoselin dijo que vivia en la Gran Vía, Madrid, Madrid, que su numero de telefono es 626175308. El numero de telefono de Ana Lopez es  626175309  y la podemos contactar en cualquier momento."
         # Llamar al método clean() del Scrubber para anonimizar el texto
-        anon_text= scrubber.clean(texto)
+        anon_text = scrubber.clean(texto)
 
         # Retornar el texto anonimizado en la respuesta HTTP
         return Response(anon_text)
-    
 
-#methos to updathe Phone detector of Scrubadub
+# Define the PhoneDetector for Scrubadub
 @register_detector
 class PhoneDetector(Detector):
- 
     filth_cls = PhoneFilth
     name = 'phone'
     autoload = True
